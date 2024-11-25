@@ -1,15 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
-import ImageComponent from '../components/ImageComponent'
-import TextComponent from '../components/TextComponent'
-import ButtonComponent from '../components/ButtonComponent'
-
+import Conditional from '../components/Conditional'
+import AND from '../components/AND'
+import Ternary from '../components/Ternary'
 const Index = () => {
   return (
     <View>
-        <ImageComponent />;
-        <TextComponent />;
-        <ButtonComponent />;
+      <Ternary />
     </View>
   )
 }
