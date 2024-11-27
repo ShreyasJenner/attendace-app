@@ -14,6 +14,9 @@ import Effect from '../components/6. Use Effect/Effect'
 import DataFetching from '../components/6. Use Effect/DataFetching'
 import FoodList from '../components/7. Use Effect Challenges/FoodList'
 import RandomUser from '../components/7. Use Effect Challenges/RandomUser'
+import Counter from '../components/8. Use Reducer/Counter'
+import Todo from '../components/8. Use Reducer/Todo'
+import ProfileManager from '../components/8. Use Reducer/Profiler'
 
 
 const Index = () => {
@@ -34,7 +37,10 @@ const Index = () => {
       {/* <Effect /> */}
       {/* <DataFetching /> */}
       {/* <FoodList /> */}
-      <RandomUser />
+      {/* <RandomUser /> */}
+      {/* <Counter /> */}
+      {/* <Todo /> */}
+      <ProfileManager />
     </View>
   )
 }
