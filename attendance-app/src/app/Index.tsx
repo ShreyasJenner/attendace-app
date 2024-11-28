@@ -17,9 +17,18 @@ import RandomUser from '../components/7. Use Effect Challenges/RandomUser'
 import Counter from '../components/8. Use Reducer/Counter'
 import Todo from '../components/8. Use Reducer/Todo'
 import ProfileManager from '../components/8. Use Reducer/Profiler'
+import ComponentA from '../components/9. Prop Drilling/ComponentA'
+import { UserProvider } from '../Context/UserContext'
+import { NumberContext, NumberProvider } from '../Context/NumberContext'
+import NumberA from '../components/10. Context Challenge/NumberA'
+import WithoutHook from '../components/11. Custom Hook/WithoutHook'
+import WithHook from '../components/11. Custom Hook/WithHook'
+import FormHook from '../components/11. Custom Hook/FormHook'
 
 
 const Index = () => {
+
+  const name = "Shreyas";
   
   return (
     <View>
@@ -40,7 +49,20 @@ const Index = () => {
       {/* <RandomUser /> */}
       {/* <Counter /> */}
       {/* <Todo /> */}
-      <ProfileManager />
+      {/* <ProfileManager /> */}
+      
+      {/* <UserProvider>
+        <ComponentA />
+      </UserProvider> */}
+
+      {/* <NumberProvider>
+        <NumberA />
+      </NumberProvider> */}
+
+      {/* <WithoutHook /> */}
+      {/* <WithHook /> */}
+      {/* <FormHook /> */}
+
     </View>
   )
 }
