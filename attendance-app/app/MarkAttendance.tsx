@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, Button } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
+import * as DatabaseCALC from '../components/DatabaseCalc';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import { Calendar } from 'react-native-calendars';
 
 const MarkAttendance = () => {
+  // state to store list of courses
   const [coursecode, setCoursecode] = useState<DatabaseCRUD.Course[]>([]);
 
   // states to store selected course and check if it has been filled
@@ -12,11 +14,7 @@ const MarkAttendance = () => {
   const [courseFocus, setCourseFocus] = useState(false);
 
   // state to store selected periods and check if it has been filled
-  const [selectedperiods, setSelectedPeriods] = useState([]);
-  
-  // state to store selected date
-  const [selecteddates, setDate] = useState('');
-
+  const [selectedperiods, setSelectedPeriods] = useState<string[]>([]);
   // const list to store slots and associated values
   const periods = [
     {label: 'Slot 1', value:'1'},
@@ -32,6 +30,19 @@ const MarkAttendance = () => {
     {label: 'Slot 11', value:'11'},
     {label: 'Slot 12', value:'12'},
   ];
+  
+  // state to store selected date
+  const [selecteddates, setDate] = useState('');
+
+  // state to store whether present or absent
+  const [present, setPresent] = useState(true);
+  // const list to store 
+  const present_list = [
+    {label: 'Present', value: true},
+    {label: 'Absent', value: false}
+  ];
+
+
 
   // useEffect that runs at start of loading of page, to get all course data
   useEffect(() => {
@@ -63,9 +74,20 @@ const MarkAttendance = () => {
     if((selectedcourse == '') || (selectedperiods.length == 0) || (selecteddates == '')) {
       console.error("Fill all fields");
     } else {
-      //TODO: push all data to database
+      const db = await DatabaseCRUD.openDatabase();
+      
+      if(db) {
+        // get total days for selected course
+        const res = await DatabaseCALC.getTotalDays(db, selectedcourse);
+        
+        // add entries to the timestamp table
+        selectedperiods.forEach(async (item) => {
+          await DatabaseCRUD.insertTimestampData(db, 1, Number(item), selecteddates, 
+            (present?1:0),selectedcourse);
+        });
+      }
 
-      // set all input arrays to empty
+      // clear all input arrays
       setCourseValue('Course Code');
       setSelectedPeriods([]);
       setDate('');
@@ -112,12 +134,24 @@ const MarkAttendance = () => {
       </View>
 
       <View style={styles.inputContainerStyle}>
+
         {/* Calendar for data selection */}
         <Calendar
         style={styles.calendarStyle}
         onDayPress={day => {setDate(day.dateString)}}
         markedDates={{[selecteddates]: {selected: true, disableTouchEvent: true}}}
         />
+
+        {/* Dropdown for marking present/absent */}
+        <Dropdown 
+        style={styles.dropdownStyle}
+        data={present_list}
+        labelField='label'
+        valueField='value'
+        onChange={item => {setPresent(item.value)}}
+        placeholder={present?"Present":"Absent"}
+        />
+
       </View>
 
       <View style={styles.inputContainerStyle}>

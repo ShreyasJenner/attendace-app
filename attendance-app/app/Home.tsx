@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet } from 'react-native';
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
 import * as DatabaseCalc from '../components/DatabaseCalc';
 
-const MainDisplay = () => {
+const Home = () => {
     const [details, setDetails] = useState<DatabaseCalc.Details[]|undefined>([]);
 
   // threshold value below which attendance percentage should not dip
@@ -15,19 +15,21 @@ const MainDisplay = () => {
         const db = await DatabaseCRUD.openDatabase();
 
         if (db) {
+          // await DatabaseCRUD.dropTable(db, 'courses');
+          // await DatabaseCRUD.dropTable(db, 'timestamps'); 
+
           await DatabaseCRUD.createTables(db);
 
           await DatabaseCRUD.clearTable(db, 'courses');
           await DatabaseCRUD.clearTable(db, 'timestamps');
 
-          await DatabaseCRUD.insertCourseData(db, '19cse301', 'Computer Networks', 5);
-          await DatabaseCRUD.insertCourseData(db, '19cse302', 'DAA', 3);
-          await DatabaseCRUD.insertCourseData(db, '19cse303', 'Embedded', 10);
+          await DatabaseCRUD.insertCourseData(db, '19cse301', 'Computer Networks');
+          await DatabaseCRUD.insertCourseData(db, '19cse302', 'DAA');
+          await DatabaseCRUD.insertCourseData(db, '19cse303', 'Embedded');
 
-          await DatabaseCRUD.insertTimestampData(db, 1, 3, 'temp day', '19cse301');
-          await DatabaseCRUD.insertTimestampData(db, 2, 3, 'temp day 2', '19cse301');
-          await DatabaseCRUD.insertTimestampData(db, 3, 4, 'temp day 2', '19cse302');
-          await DatabaseCRUD.insertTimestampData(db, 4, 2, 'temp day 3', '19cse303');
+          await DatabaseCRUD.insertTimestampData(db, 1, 2, 'day 1', 1, '19cse301');
+          await DatabaseCRUD.insertTimestampData(db, 2, 2, 'day 1', 0, '19cse301');
+          await DatabaseCRUD.insertTimestampData(db, 3, 2, 'day 1', 1, '19cse301');
 
           const res = await DatabaseCalc.getMainPageDetails(db)
           setDetails(res);
@@ -43,7 +45,7 @@ const MainDisplay = () => {
   // Function to calculate how many days can be skipped or must be attended
   const calculateDiff = (item: DatabaseCalc.Details) => {
     if(item.attendance < (threshold*100)) {
-      let diff = Math.round(((threshold * item.total_classes) - item.attended_classes) / (1 - threshold));
+      let diff = Math.round(((threshold * item.total_classes) - item.present_classes) / (1 - threshold));
 
       // if the difference is 1, pass appropriate message
       if(diff == 1) {
@@ -53,7 +55,7 @@ const MainDisplay = () => {
       }
       
     } else {
-      let diff = Math.floor((item.attended_classes/threshold) - item.total_classes);
+      let diff = Math.floor((item.present_classes/threshold) - item.total_classes);
 
       // if the difference is 1, pass appropriate message
       if(diff == 1) {
@@ -102,8 +104,8 @@ const MainDisplay = () => {
               {/* view for course code data */}
               <View style={styles.item2Style}>
                 <Text>TD: {item.total_classes}</Text>
-                <Text>AD: {item.attended_classes}</Text>
-                <Text>MD: { item.missed_classes}</Text>
+                <Text>AD: {item.present_classes}</Text>
+                <Text>MD: { item.absent_classes}</Text>
                 <Text>A%: {item.attendance}</Text>
                 {calculateDiff(item)}
               </View>
@@ -120,7 +122,7 @@ const MainDisplay = () => {
   )
 }
 
-export default MainDisplay;
+export default Home;
 
 const styles = StyleSheet.create({
     pageStyle: {
