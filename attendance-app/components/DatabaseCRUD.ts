@@ -87,11 +87,11 @@ const modifyCourseData = async (db: SQLite.SQLiteDatabase, course_code: string, 
 }
 
 // Function to insert data into timestamps table
-const insertTimestampData = async (db: SQLite.SQLiteDatabase, timestamp_id: number, period: number, day: string, present: number, course_code: string): Promise<void> => {
+const insertTimestampData = async (db: SQLite.SQLiteDatabase, period: number, day: string, present: number, course_code: string): Promise<void> => {
   try {
     const res = await db.runAsync(
-      'INSERT OR IGNORE INTO timestamps (timestamp_id, period, day, present, course_code) VALUES (?, ?, ?, ?, ?)', 
-      timestamp_id, period, day, present, course_code);
+      'INSERT OR IGNORE INTO timestamps (period, day, present, course_code) VALUES (?, ?, ?, ?)', 
+      period, day, present, course_code);
 
     // console.log(res);
   } catch(err) {

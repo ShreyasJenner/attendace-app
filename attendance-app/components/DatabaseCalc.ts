@@ -5,6 +5,7 @@
 
 import * as SQLite from 'expo-sqlite';
 import { Course, TimeStamp } from './DatabaseCRUD';
+import { useState } from 'react';
 
 /* Interfaces for typescript */
           // await DatabaseCRUD.dropTable(db, 'time
@@ -44,10 +45,10 @@ const getCourseIdsQuery = `SELECT course_id FROM courses`;
 
 
 // function to get total number of day for all courses
-const getCourse = async(db: SQLite.SQLiteDatabase) => {
+const getCourse = async(db: SQLite.SQLiteDatabase): Promise<Course[]> => {
 
     try {
-        const res = await db.getAllAsync(getCourseQuery);
+        const res:Course[] = await db.getAllAsync(getCourseQuery);
 
         return res;
     } catch(err) {
@@ -131,34 +132,39 @@ const getTimeStampByCourseCode = async(db: SQLite.SQLiteDatabase) => {
 // Function to get current attendance percentage
 const getMainPageDetails = async(db: SQLite.SQLiteDatabase) => {
     try {
-        const total:Course[]|unknown[] = await getCourse(db);
+        const total:Course[] = await getCourse(db);
 
         // console.log("total", total);
         // console.log("Missed", missed);
 
+
         // array to be returned
-        let details:Details[] = [];
-
-        // iterate through total array first
-        console.log(typeof total);
-        total.forEach(async ({course_code, course_name})  => {
-            const total:DaysResult = await getTotalDays(db, course_code);
-            const present:DaysResult = await getPresentDays(db, course_code);
-            const absent:DaysResult = await getAbsentDays(db, course_code);
-            console.log(absent);
-
-            details.push({
-                "course_code": course_code, 
-                "total_classes": total['COUNT(timestamps.timestamp_id)'],
-                "absent_classes": absent['COUNT(timestamps.timestamp_id)'],
-                "present_classes": present['COUNT(timestamps.timestamp_id)'],
-                "attendance": 0,
+        const details: Details[] = await Promise.all(
+            total.map(async ({ course_code }) => {
+              const totalDays: DaysResult = await getTotalDays(db, course_code);
+              const presentDays: DaysResult = await getPresentDays(db, course_code);
+              const absentDays: DaysResult = await getAbsentDays(db, course_code);
+          
+              const totalClasses = totalDays['COUNT(timestamps.timestamp_id)'];
+              const presentClasses = presentDays['COUNT(timestamps.timestamp_id)'];
+          
+              return {
+                course_code,
+                total_classes: totalClasses,
+                absent_classes: absentDays['COUNT(timestamps.timestamp_id)'],
+                present_classes: presentClasses,
+                attendance: totalClasses
+                  ? Number(((presentClasses / totalClasses) * 100).toFixed(2))
+                  : 0, // Avoid division by zero
+              };
             })
-        });
+        );
+
 
         // calculate the attendance percentage and fill in the details array
         details.forEach((item) => {
             item.attendance = Number(((item.present_classes / item.total_classes) * 100).toFixed(2));
+            console.log("item attendance", item.attendance);
         })
 
         return details;

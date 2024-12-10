@@ -1,9 +1,19 @@
 import { View, Text, StyleSheet, Button } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
 import * as DatabaseCALC from '../components/DatabaseCalc';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import { Calendar } from 'react-native-calendars';
+import { DetailsContext } from '@/Context/DetailsContext';
+
+// interface for day
+interface DayType {
+    dateString: string; // e.g., "2023-12-10"
+    day: number;        // Day of the month, e.g., 10
+    month: number;      // Month number, e.g., 12
+    year: number;       // Year, e.g., 2023
+    timestamp: number;  // Unix timestamp in milliseconds
+}
 
 const MarkAttendance = () => {
   // state to store list of courses
@@ -42,6 +52,13 @@ const MarkAttendance = () => {
     {label: 'Absent', value: false}
   ];
 
+  // get details flag context
+  const context = useContext(DetailsContext);
+  if(!context) {
+    throw new Error("Getting Details Context failed");
+  }
+
+  const {detailsFlag, setDetailsFlag} = context;
 
 
   // useEffect that runs at start of loading of page, to get all course data
@@ -68,29 +85,30 @@ const MarkAttendance = () => {
     FetchData();
   }, []);
 
+
   // function to mark attendance and store data in database
   const markAttendance = async () => {
+    
 
     if((selectedcourse == '') || (selectedperiods.length == 0) || (selecteddates == '')) {
       console.error("Fill all fields");
+      return;
     } else {
       const db = await DatabaseCRUD.openDatabase();
       
-      if(db) {
-        // get total days for selected course
-        const res = await DatabaseCALC.getTotalDays(db, selectedcourse);
-        
-        // add entries to the timestamp table
-        selectedperiods.forEach(async (item) => {
-          await DatabaseCRUD.insertTimestampData(db, 1, Number(item), selecteddates, 
-            (present?1:0),selectedcourse);
-        });
+      if (db) {
+        const promises = selectedperiods.map((item) =>
+          DatabaseCRUD.insertTimestampData(db, Number(item), selecteddates, present ? 1 : 0, selectedcourse)
+        );
+      
+        await Promise.all(promises); // Wait for all promises to resolve
       }
 
       // clear all input arrays
       setCourseValue('Course Code');
       setSelectedPeriods([]);
       setDate('');
+      setDetailsFlag(!detailsFlag);
     }
   }
 
@@ -138,7 +156,7 @@ const MarkAttendance = () => {
         {/* Calendar for data selection */}
         <Calendar
         style={styles.calendarStyle}
-        onDayPress={day => {setDate(day.dateString)}}
+        onDayPress={(day:DayType) => {setDate(day.dateString)}}
         markedDates={{[selecteddates]: {selected: true, disableTouchEvent: true}}}
         />
 

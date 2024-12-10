@@ -4,7 +4,7 @@ import React from 'react'
 const Timestamps = () => {
   return (
     <View>
-      <Text>Timestamps</Text>
+      
     </View>
   )
 }
