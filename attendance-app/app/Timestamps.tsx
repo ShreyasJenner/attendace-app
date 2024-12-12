@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, Button, TouchableOpacity, TextInput } from 'react-native';
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as DatabaseCRUD from '@/components/DatabaseCRUD';
 import { FlatList } from 'react-native-gesture-handler';
 import { Dropdown } from 'react-native-element-dropdown';
-import { DetailsContext } from '@/Context/DetailsContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Timestamps = () => {
   // states
@@ -35,7 +35,7 @@ const Timestamps = () => {
   
 
   // use effect that renders timestamps on screen
-  useEffect(() => {
+  useFocusEffect(() => {
     const fetchData = async () => {
       const db = await DatabaseCRUD.openDatabase();
 
@@ -46,7 +46,7 @@ const Timestamps = () => {
     };
 
     fetchData();
-  }, []);
+  });
 
   // function to set rows in edit mode
   const startEditing = (item: DatabaseCRUD.TimeStamp) => {

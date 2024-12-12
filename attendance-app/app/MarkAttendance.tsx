@@ -5,6 +5,7 @@ import * as DatabaseCALC from '../components/DatabaseCalc';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import { Calendar } from 'react-native-calendars';
 import { DetailsContext } from '@/Context/DetailsContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 // interface for day
 interface DayType {
@@ -62,7 +63,7 @@ const MarkAttendance = () => {
 
 
   // useEffect that runs at start of loading of page, to get all course data
-  useEffect(() => {
+  useFocusEffect(() => {
 
     // Function to get list of courses
     const FetchData = async () => {
@@ -83,7 +84,7 @@ const MarkAttendance = () => {
     }
 
     FetchData();
-  }, []);
+  });
 
 
   // function to mark attendance and store data in database

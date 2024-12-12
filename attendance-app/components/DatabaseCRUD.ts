@@ -33,9 +33,17 @@ const createTablesQuery = `
 
 const insertCourseDataQuery = 'INSERT OR IGNORE INTO courses (course_code, course_name) VALUES (?, ?)';
 
+const updateCourseDataQuery = 'UPDATE courses SET course_code = ?, course_name = ? WHERE course_code = ?';
+
+const updateCourseCodeInTimestampsQuery = 'UPDATE timestamps SET course_code = ? WHERE course_code = ?';
+
 const getAllCoursesQuery = 'SELECT * FROM courses';
 
 const getAllTimestampsQuery = 'SELECT * FROM timestamps where course_code = ?';
+
+const deleteCourseQuery = 'DELETE FROM courses WHERE course_code = ?';
+
+const deleteTimestampDataByCourseQuery = 'DELETE FROM timestamps WHERE course_code = ?';
 
 const clearTableQuery = (tableName: string) => `DELETE FROM ${tableName}`;
 
@@ -51,7 +59,7 @@ const getSelectiveTimestampsQuery = 'SELECT * FROM timestamps WHERE course_code 
 
 
 // Function to open a database connection
-const openDatabase = async (): Promise<SQLite.SQLiteDatabase | undefined> => {
+export const openDatabase = async (): Promise<SQLite.SQLiteDatabase | undefined> => {
   try {
     const db = await SQLite.openDatabaseAsync('attendance.db');
     console.log("Database connected!");
@@ -63,7 +71,7 @@ const openDatabase = async (): Promise<SQLite.SQLiteDatabase | undefined> => {
 };
 
 // Function to create the tables in the database
-const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
+export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
   try {
     await db.execAsync(createTablesQuery);
     console.log("Tables created (if not exists)!");
@@ -73,7 +81,7 @@ const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
 };
 
 // Function to insert data into the courses tables
-const insertCourseData = async (db: SQLite.SQLiteDatabase, course_code: string, course_name: string): Promise<void> => {
+export const insertCourseData = async (db: SQLite.SQLiteDatabase, course_code: string, course_name: string): Promise<void> => {
   try {
     await db.runAsync(insertCourseDataQuery,course_code, course_name);
 
@@ -84,10 +92,9 @@ const insertCourseData = async (db: SQLite.SQLiteDatabase, course_code: string, 
 };
 
 // Function to modify timestamp data
-const updateTimestampData = async (db : SQLite.SQLiteDatabase, data: TimeStamp) => {
+export const updateTimestampData = async (db : SQLite.SQLiteDatabase, data: TimeStamp) => {
   try {
     if(db) {
-      console.log("check", data);
       const res = await db.runAsync(modifyTimestampDataQuery, data.period, data.day, data.present, data.course_code, data.timestamp_id);
       console.log("Updated timestamp data");
       // console.log("res", res);
@@ -97,8 +104,23 @@ const updateTimestampData = async (db : SQLite.SQLiteDatabase, data: TimeStamp) 
   }
 }
 
+// Function to modify course data
+export const updateCourseData = async(db: SQLite.SQLiteDatabase, course_code: string, course_name: string, old_course_code: string) => {
+  try {
+    if(db) {
+      console.log("check", course_code, course_name, old_course_code);
+      const res = await db.runAsync(updateCourseDataQuery, course_code, course_name, old_course_code);
+      const res2 = await db.runAsync(updateCourseCodeInTimestampsQuery, course_code, old_course_code);
+      console.log("Update course code", res);
+      console.log("Updated timestamp course code", res2);
+    }
+  } catch(err) {
+    console.error("Error updating course code");
+  }
+}
+
 // Function to delete timestamp data
-const deleteTimestampData = async (db : SQLite.SQLiteDatabase, id: number) => {
+export const deleteTimestampData = async (db : SQLite.SQLiteDatabase, id: number) => {
   try {
     const res = await db.runAsync(deleteTimestampDataQuery, id);
     console.log("Deleted timestamp",res);
@@ -107,8 +129,22 @@ const deleteTimestampData = async (db : SQLite.SQLiteDatabase, id: number) => {
   }
 }
 
+// Function to delete course data
+export const deleteCourse = async (db: SQLite.SQLiteDatabase, course_code: string) => {
+  try {
+    if(db) {
+      const res = await db.runAsync(deleteCourseQuery, course_code);
+      const res2 = await db.runAsync(deleteTimestampDataByCourseQuery, course_code);
+      console.log("Deleted course", res);
+      console.log("Delete related timestamp data", res2);
+    }
+  } catch(err) {
+    console.error("Error deleting course code");
+  }
+} 
+
 // Function to insert data into timestamps table
-const insertTimestampData = async (db: SQLite.SQLiteDatabase, period: number, day: string, present: number, course_code: string): Promise<void> => {
+export const insertTimestampData = async (db: SQLite.SQLiteDatabase, period: number, day: string, present: number, course_code: string): Promise<void> => {
   try {
     const res = await db.runAsync(
       'INSERT OR IGNORE INTO timestamps (period, day, present, course_code) VALUES (?, ?, ?, ?)', 
@@ -121,7 +157,7 @@ const insertTimestampData = async (db: SQLite.SQLiteDatabase, period: number, da
 }
 
 // Function to fetch all courses
-const getAllCourses = async (db: SQLite.SQLiteDatabase): Promise<any[]> => {
+export const getAllCourses = async (db: SQLite.SQLiteDatabase): Promise<any[]> => {
   try {
     const result = await db.getAllAsync(getAllCoursesQuery);
     return result;
@@ -132,7 +168,7 @@ const getAllCourses = async (db: SQLite.SQLiteDatabase): Promise<any[]> => {
 };
 
 // Function to fetch all timestamps by course
-const getAllTimestamps = async (db: SQLite.SQLiteDatabase, course_code: string): Promise<any[]> => {
+export const getAllTimestamps = async (db: SQLite.SQLiteDatabase, course_code: string): Promise<any[]> => {
   try {
     const result = await db.getAllAsync(getAllTimestampsQuery, course_code);
     return result;
@@ -143,7 +179,7 @@ const getAllTimestamps = async (db: SQLite.SQLiteDatabase, course_code: string):
 };
 
 // Function to selectively fetch timestamps
-const getSelectiveTimestamps = async (db: SQLite.SQLiteDatabase, course_code: string, present: number): Promise<any[]> => {
+export const getSelectiveTimestamps = async (db: SQLite.SQLiteDatabase, course_code: string, present: number): Promise<any[]> => {
   try {
     const res = await db.getAllAsync(getSelectiveTimestampsQuery, course_code, present);
     return res;
@@ -154,7 +190,7 @@ const getSelectiveTimestamps = async (db: SQLite.SQLiteDatabase, course_code: st
 }
 
 // Function to delete all rows in a table
-const clearTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<any[]> => {
+export const clearTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<any[]> => {
   try {
     const res = await db.getAllAsync(clearTableQuery(tableName));
     return res;
@@ -165,7 +201,7 @@ const clearTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise
 }
 
 // Function to drop tables
-const dropTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<any[]> => {
+export const dropTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<any[]> => {
   try {
     const res = await db.getAllAsync(dropTableQuery(tableName));
     return res;
@@ -175,10 +211,4 @@ const dropTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<
   }
 }
 
-export {Course, TimeStamp, openDatabase, createTables, 
-  insertCourseData,
-  updateTimestampData, deleteTimestampData,
-  insertTimestampData, getAllCourses, 
-  getAllTimestamps, getSelectiveTimestamps,
-  clearTable, dropTable
-}
+export {Course, TimeStamp}
