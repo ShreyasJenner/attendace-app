@@ -130,7 +130,7 @@ const getTimeStampByCourseCode = async(db: SQLite.SQLiteDatabase) => {
 }
 
 // Function to get current attendance percentage
-const getMainPageDetails = async(db: SQLite.SQLiteDatabase) => {
+const getMainPageDetails = async(db: SQLite.SQLiteDatabase): Promise<Details[]|undefined> => {
     try {
         const total:Course[] = await getCourse(db);
 
@@ -164,7 +164,7 @@ const getMainPageDetails = async(db: SQLite.SQLiteDatabase) => {
         // calculate the attendance percentage and fill in the details array
         details.forEach((item) => {
             item.attendance = Number(((item.present_classes / item.total_classes) * 100).toFixed(2));
-            console.log("item attendance", item.attendance);
+            // console.log("item attendance", item.attendance);
         })
 
         return details;

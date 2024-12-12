@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
 import * as DatabaseCalc from '../components/DatabaseCalc';
 import { DetailsContext } from '@/Context/DetailsContext';
@@ -10,36 +11,11 @@ const Home = () => {
   // threshold value below which attendance percentage should not dip
   const threshold = 0.8;
 
-  // get details flag context
-  const context = useContext(DetailsContext);
-  if(!context) {
-    throw new Error("Error getting context for Details Flag");
-  }
-
-  const {detailsFlag, setDetailsFlag} = context;
-
-  useEffect(() => {
+  useFocusEffect(() => {
     const FetchData = async () => {
       try {
         const db = await DatabaseCRUD.openDatabase();
-        console.log("home", detailsFlag);
         if (db) {
-          // await DatabaseCRUD.dropTable(db, 'courses');
-          // await DatabaseCRUD.dropTable(db, 'timestamps'); 
-
-          // await DatabaseCRUD.createTables(db);
-
-          // await DatabaseCRUD.clearTable(db, 'courses');
-          // await DatabaseCRUD.clearTable(db, 'timestamps');
-
-          // await DatabaseCRUD.insertCourseData(db, '19cse301', 'Computer Networks');
-          // await DatabaseCRUD.insertCourseData(db, '19cse302', 'DAA');
-          // await DatabaseCRUD.insertCourseData(db, '19cse303', 'Embedded');
-
-          // await DatabaseCRUD.insertTimestampData(db, 1, 2, 'day 1', 1, '19cse301');
-          // await DatabaseCRUD.insertTimestampData(db, 2, 2, 'day 1', 0, '19cse301');
-          // await DatabaseCRUD.insertTimestampData(db, 3, 2, 'day 1', 1, '19cse301');
-
           const res = await DatabaseCalc.getMainPageDetails(db)
           setDetails(res);
         }
@@ -49,7 +25,7 @@ const Home = () => {
     };
 
     FetchData();
-  }, [detailsFlag]);
+  });
 
   // Function to calculate how many days can be skipped or must be attended
   const calculateDiff = (item: DatabaseCalc.Details) => {
@@ -79,9 +55,6 @@ const Home = () => {
     
     // View to display column headers
     <View style={styles.pageStyle}>
-      {/* temp display */}
-      <Text>{detailsFlag?"True":"False"}</Text>
-
       {/* column headers */}
       <View style={styles.containerStyle}>
 
