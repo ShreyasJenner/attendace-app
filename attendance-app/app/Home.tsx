@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
 import * as DatabaseCalc from '../components/DatabaseCalc';
-import { DetailsContext } from '@/Context/DetailsContext';
 
 const Home = () => {
     const [details, setDetails] = useState<DatabaseCalc.Details[]|undefined>([]);
@@ -11,7 +10,9 @@ const Home = () => {
   // threshold value below which attendance percentage should not dip
   const threshold = 0.8;
 
-  useFocusEffect(() => {
+  const navigation = useNavigation();
+
+  useEffect(() => {
     const FetchData = async () => {
       try {
         const db = await DatabaseCRUD.openDatabase();
@@ -24,8 +25,12 @@ const Home = () => {
       }
     };
 
-    FetchData();
-  });
+    const unsubscribe = navigation.addListener('focus', () => {
+      FetchData();
+    })
+    
+    return unsubscribe;
+  }, [navigation]);
 
   // Function to calculate how many days can be skipped or must be attended
   const calculateDiff = (item: DatabaseCalc.Details) => {

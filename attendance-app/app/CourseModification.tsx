@@ -10,19 +10,24 @@ import {
     Alert
 } from "react-native";
 import * as DatabaseCRUD from "../components/DatabaseCRUD";
+import { useNavigation } from "@react-navigation/native";
 
 const CourseModification = () => {
+    // useStates to store original course data and modified course data
     const [courseList, setCourseList] = useState<DatabaseCRUD.Course[]>([]);
     const [newCourseCode, setNewCourseCode] = useState("");
     const [newCourseName, setNewCourseName] = useState("");
     const [editableCourses, setEditableCourses] = useState<{ [key: string]: { courseCode: string; courseName: string } }>({});
+
+    // navigation element to re-render screen on focus
+    const navigation = useNavigation();
 
     useEffect(() => {
         const fetchCourses = async () => {
             try {
                 const db = await DatabaseCRUD.openDatabase();
 
-                if (db) {
+                if(db) {
                     const res = await DatabaseCRUD.getAllCourses(db);
                     setCourseList(res);
                     const initialEditableState = res.reduce((acc, course) => {
@@ -31,13 +36,17 @@ const CourseModification = () => {
                     }, {} as { [key: string]: { courseCode: string; courseName: string } });
                     setEditableCourses(initialEditableState);
                 }
-            } catch (err) {
+            } catch(err) {
                 console.error("Error getting courses", err);
             }
         };
 
-        fetchCourses();
-    }, []);
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchCourses();
+        });
+          
+        return unsubscribe;
+    }, [navigation])
 
     const handleAddCourse = async () => {
         if (newCourseCode.trim() === "" || newCourseName.trim() === "") {
@@ -48,11 +57,15 @@ const CourseModification = () => {
         try {
             const db = await DatabaseCRUD.openDatabase();
             if (db) {
-                await DatabaseCRUD.insertCourseData(db, newCourseCode, newCourseName);
-                const updatedList = await DatabaseCRUD.getAllCourses(db);
-                setCourseList(updatedList);
-                setNewCourseCode("");
-                setNewCourseName("");
+                const res = await DatabaseCRUD.insertCourseData(db, newCourseCode, newCourseName);
+                if(res == true) {
+                    const updatedList = await DatabaseCRUD.getAllCourses(db);
+                    setCourseList(updatedList);
+                    setNewCourseCode("");
+                    setNewCourseName("");
+                } else {
+                    Alert.alert("Error", "Failed to insert course data");
+                }
             }
         } catch (err) {
             console.error("Error adding course", err);
@@ -133,7 +146,15 @@ const CourseModification = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => handleDeleteCourse(item.course_code)}
+                    onPress={() => {
+                        Alert.alert("Warning!", "Are you sure you want to delete this course?",  
+                            [
+                                {text: "Ok", onPress: () => handleDeleteCourse(item.course_code)},
+                                {text: "Cancel"},
+                            ],
+                            { cancelable: true }
+                        );
+                    }}
                 >
                     <Text style={styles.buttonText}>Delete</Text>
                 </TouchableOpacity>

@@ -20,7 +20,7 @@ const createTablesQuery = `
       PRAGMA journal_mode = WAL;
       CREATE TABLE IF NOT EXISTS courses (
         course_code varchar(8) PRIMARY KEY,
-        course_name varchar(40)
+        course_name varchar(40) UNIQUE
       );
       CREATE TABLE IF NOT EXISTS timestamps (
         timestamp_id INTEGER PRIMARY KEY,
@@ -31,7 +31,7 @@ const createTablesQuery = `
         FOREIGN KEY(course_code) REFERENCES courses(course_code)
       );`;
 
-const insertCourseDataQuery = 'INSERT OR IGNORE INTO courses (course_code, course_name) VALUES (?, ?)';
+const insertCourseDataQuery = 'INSERT INTO courses (course_code, course_name) VALUES (?, ?)';
 
 const updateCourseDataQuery = 'UPDATE courses SET course_code = ?, course_name = ? WHERE course_code = ?';
 
@@ -81,13 +81,13 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
 };
 
 // Function to insert data into the courses tables
-export const insertCourseData = async (db: SQLite.SQLiteDatabase, course_code: string, course_name: string): Promise<void> => {
+export const insertCourseData = async (db: SQLite.SQLiteDatabase, course_code: string, course_name: string): Promise<boolean> => {
   try {
     await db.runAsync(insertCourseDataQuery,course_code, course_name);
-
-    // console.log(res);
+    return true;
   } catch (error) {
-    console.error("Failed to insert data:", error);
+    console.error("Error in inserting data", error);
+    return false;
   }
 };
 

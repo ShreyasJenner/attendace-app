@@ -4,7 +4,7 @@
 */
 
 import * as SQLite from 'expo-sqlite';
-import { Course, TimeStamp } from './DatabaseCRUD';
+import { Course, TimeStamp, openDatabase } from './DatabaseCRUD';
 import { useState } from 'react';
 
 /* Interfaces for typescript */
@@ -28,6 +28,8 @@ interface Details {
 } 
 
 /* Queries */
+const checkTableExistsQuery = "SELECT * FROM sqlite_master WHERE type='table' AND name=?";
+
 const getCourseQuery = `SELECT * FROM courses`;
 
 const getTotalDaysQuery = `SELECT course_code, COUNT(timestamps.timestamp_id) FROM timestamps WHERE course_code = ?`;
@@ -43,11 +45,30 @@ GROUP BY course_code`;
 
 const getCourseIdsQuery = `SELECT course_id FROM courses`;
 
+// Function to check if table exists
+export const checkTableExists = async(db: SQLite.SQLiteDatabase, table_name: string): Promise<boolean> => {
+    try {
+        const db = await openDatabase();
+        if(db) {
+            const res = await db.getAllAsync(checkTableExistsQuery, table_name);
+            
+            return (res.length != 0)
+        }
+        return false;
+    } catch(err) {
+        console.error("Error getting sqlite_master", err);
+        return false;
+    }
+}
 
 // function to get total number of day for all courses
 const getCourse = async(db: SQLite.SQLiteDatabase): Promise<Course[]> => {
 
     try {
+        const exists = await checkTableExists(db, 'courses');
+        if(exists == false) {
+            return [];
+        }
         const res:Course[] = await db.getAllAsync(getCourseQuery);
 
         return res;

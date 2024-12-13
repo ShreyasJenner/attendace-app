@@ -6,6 +6,7 @@ import { DetailsProvider } from '@/Context/DetailsContext';
 import Timestamps from './Timestamps';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import CourseModification from './CourseModification';
+import { Dimensions } from 'react-native';
 
 const Index = () => {
   const Tab = createMaterialTopTabNavigator();
@@ -13,7 +14,7 @@ const Index = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DetailsProvider>
-        <Tab.Navigator screenOptions={{lazy: true}}>
+        <Tab.Navigator initialLayout={{width: Dimensions.get('window').width}} screenOptions={{lazy: true}}>
           <Tab.Screen name="Home" component={Home} />
           <Tab.Screen name="Mark Attendance" component={MarkAttendance} />
           <Tab.Screen name="Modify Timestamp" component={Timestamps} />

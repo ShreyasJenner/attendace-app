@@ -1,11 +1,10 @@
 import { View, Text, StyleSheet, Button } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
-import * as DatabaseCALC from '../components/DatabaseCalc';
 import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
 import { Calendar } from 'react-native-calendars';
 import { DetailsContext } from '@/Context/DetailsContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 // interface for day
 interface DayType {
@@ -61,10 +60,11 @@ const MarkAttendance = () => {
 
   const {detailsFlag, setDetailsFlag} = context;
 
+  const navigation = useNavigation();
+
 
   // useEffect that runs at start of loading of page, to get all course data
-  useFocusEffect(() => {
-
+  useEffect(() => {
     // Function to get list of courses
     const FetchData = async () => {
       try {
@@ -83,8 +83,13 @@ const MarkAttendance = () => {
       }
     }
 
-    FetchData();
-  });
+    // activate when screen is focused
+    const unsubscribe = navigation.addListener('focus', () => {
+      FetchData();
+    })
+    
+    return unsubscribe;
+  }, [navigation]);
 
 
   // function to mark attendance and store data in database
