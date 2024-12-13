@@ -1,148 +1,172 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { View, Text, FlatList, StyleSheet, Button, TextInput, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import * as DatabaseCRUD from '../components/DatabaseCRUD';
 import * as DatabaseCalc from '../components/DatabaseCalc';
 
 const Home = () => {
-    const [details, setDetails] = useState<DatabaseCalc.Details[]|undefined>([]);
+    const [details, setDetails] = useState<DatabaseCalc.Details[] | undefined>([]);
+    const [threshold, setThreshold] = useState(0.8);
+    const [tempthreshold, setTemp] = useState('');
 
-  // threshold value below which attendance percentage should not dip
-  const threshold = 0.8;
+    const navigation = useNavigation();
 
-  const navigation = useNavigation();
+    useEffect(() => {
+        const FetchData = async () => {
+            try {
+                const db = await DatabaseCRUD.openDatabase();
+                if (db) {
+                    const res = await DatabaseCalc.getMainPageDetails(db);
+                    setDetails(res);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
 
-  useEffect(() => {
-    const FetchData = async () => {
-      try {
-        const db = await DatabaseCRUD.openDatabase();
-        if (db) {
-          const res = await DatabaseCalc.getMainPageDetails(db)
-          setDetails(res);
+        const unsubscribe = navigation.addListener('focus', () => {
+            FetchData();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
+
+    // Function to calculate number of days that can be skipped or must be attended
+    const calculateDiff = (item: DatabaseCalc.Details) => {
+        if (item.attendance < threshold * 100) {
+            let diff = Math.round(((threshold * item.total_classes) - item.present_classes) / (1 - threshold));
+            return (
+                <Text>You must attend {diff} class{diff === 1 ? '' : 'es'}</Text>
+            );
+        } else {
+            let diff = Math.floor((item.present_classes / threshold) - item.total_classes);
+            return (
+                <Text>You can skip {diff} class{diff === 1 ? '' : 'es'}</Text>
+            );
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
     };
 
-    const unsubscribe = navigation.addListener('focus', () => {
-      FetchData();
-    })
-    
-    return unsubscribe;
-  }, [navigation]);
-
-  // Function to calculate how many days can be skipped or must be attended
-  const calculateDiff = (item: DatabaseCalc.Details) => {
-    if(item.attendance < (threshold*100)) {
-      let diff = Math.round(((threshold * item.total_classes) - item.present_classes) / (1 - threshold));
-
-      // if the difference is 1, pass appropriate message
-      if(diff == 1) {
-        return <Text>You must attend {diff} class</Text>
+    // Function to replace threshold value
+    const changeThreshold = () => {
+      if(tempthreshold == '') {
+        Alert.alert("Error", "Threshold is empty!");
+      } else if(parseFloat(tempthreshold) > 1) {
+        Alert.alert("Error", "Threshold must have value between 0 and 1");
       } else {
-        return <Text>You must attend {diff} classes</Text>
-      }
-      
-    } else {
-      let diff = Math.floor((item.present_classes/threshold) - item.total_classes);
-
-      // if the difference is 1, pass appropriate message
-      if(diff == 1) {
-        return <Text>You can skip {diff} class</Text>
-      } else {
-        return <Text>You can skip {diff} classes</Text>
+        setThreshold(parseFloat(tempthreshold));
       }
     }
-  }
 
-  return (
-    
-    // View to display column headers
-    <View style={styles.pageStyle}>
-      {/* column headers */}
-      <View style={styles.containerStyle}>
-
-        {/* Column 1 view */}
-        <View style={styles.item1Style}>
-          <Text style={styles.headerStyle}>Course Code</Text>
-        </View>
-
-        {/* Column 2 view */}
-        <View style={styles.item2Style}>
-          <Text style={styles.headerStyle}>Course Data</Text>
-        </View>
-
-      </View>
-
-      <View style={styles.headerDividerStyle}></View>
-
-      {/* View to display course data */}
-      <View style={styles.containerStyle}>
-        <FlatList 
-          data={details}
-          keyExtractor={(item) => item.course_code}
-          renderItem={({item}) => (
-            <View style={styles.containerStyle}>
-
-              {/* view for course code */}
-              <View style={styles.item1Style}>
-                <Text>{item.course_code}</Text>
-              </View>
-
-              {/* view for course code data */}
-              <View style={styles.item2Style}>
-                <Text>TD: {item.total_classes}</Text>
-                <Text>AD: {item.present_classes}</Text>
-                <Text>MD: { item.absent_classes}</Text>
-                <Text>A%: {item.attendance}</Text>
-                {calculateDiff(item)}
-              </View>
-
-              {/* horizontal divider */}
-              <View style={styles.horizontalDividerStyle}></View>
+    return (
+        <View style={styles.pageStyle}>
+            {/* Threshold changer */}
+            <View style={styles.thresholdContainer}>
+                <TextInput
+                    style={styles.inputStyle}
+                    onChangeText={setTemp}
+                    value={tempthreshold}
+                    inputMode='decimal'
+                    keyboardType="decimal-pad"
+                    placeholder="Threshold"
+                />
+                <Button title="Change Threshold" onPress={changeThreshold} />
             </View>
-          )}
-        />
-      </View>
 
+            {/* Column headers */}
+            <View style={styles.headerContainer}>
+                <View style={styles.columnHeader}>
+                    <Text style={styles.headerText}>Course Code</Text>
+                </View>
+                <View style={styles.columnHeader}>
+                    <Text style={styles.headerText}>Course Data</Text>
+                </View>
+            </View>
+            <View style={styles.headerDivider} />
 
-    </View>
-  )
-}
+            {/* Course data */}
+            <FlatList
+                data={details}
+                keyExtractor={(item) => item.course_code}
+                renderItem={({ item }) => (
+                    <View style={styles.rowContainer}>
+                        {/* Course Code */}
+                        <View style={styles.columnContent}>
+                            <Text>{item.course_code}</Text>
+                        </View>
+                        {/* Course Details */}
+                        <View style={styles.columnContent}>
+                            <Text>Total: {item.total_classes}</Text>
+                            <Text>Present: {item.present_classes}</Text>
+                            <Text>Absent: {item.absent_classes}</Text>
+                            <Text>Attendance: {item.attendance}%</Text>
+                            {calculateDiff(item)}
+                        </View>
+                        <View style={styles.rowDivider} />
+                    </View>
+                )}
+            />
+        </View>
+    );
+};
 
 export default Home;
 
 const styles = StyleSheet.create({
     pageStyle: {
-      flex: 1,
-      flexDirection: 'column'
+        flex: 1,
+        backgroundColor: '#f9f9f9',
     },
-    headerStyle: {
-      fontSize: 20,
-      fontWeight: 'bold'
+    thresholdContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 10,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
     },
-    containerStyle: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'flex-start'
+    inputStyle: {
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 5,
+        paddingHorizontal: 10,
+        flex: 1,
+        marginRight: 10,
     },
-    item1Style: {
-      flexDirection: 'column',
-      width: '40%',
+    headerContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#e0e0e0',
+        paddingVertical: 10,
+        paddingHorizontal: 5,
     },
-    item2Style: {
-      flexDirection: 'column',
-      width: '60%',
+    columnHeader: {
+        flex: 1,
+        alignItems: 'center',
     },
-    horizontalDividerStyle: {
-      borderBottomColor: 'black',
-      borderBottomWidth: 2,
-      width: '100%'
+    headerText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        fontFamily: 'Roboto',
     },
-    headerDividerStyle: {
-      borderBottomColor: 'black',
-      borderBottomWidth: 5,
-      width: '100%'
-    }
-})  
+    headerDivider: {
+        height: 2,
+        backgroundColor: '#333',
+    },
+    rowContainer: {
+        flexDirection: 'row',
+        paddingVertical: 10,
+        paddingHorizontal: 5,
+        backgroundColor: '#ffffff',
+    },
+    columnContent: {
+        flex: 1,
+        paddingHorizontal: 5,
+    },
+    rowDivider: {
+        height: 1,
+        backgroundColor: '#ccc',
+        marginVertical: 5,
+    },
+});
