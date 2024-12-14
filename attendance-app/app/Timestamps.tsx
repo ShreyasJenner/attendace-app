@@ -15,10 +15,10 @@
     // state to track id of row being edited
     const [editingRowId, setEditingRowId] = useState(-1);
     const [editableRowData, setEditableRowData] = useState<DatabaseCRUD.TimeStamp>({
-      timestamp_id: -1,
-      period: 0,
+      timestamp_id: 0,
       day: "",
       present: 1,
+      slots: 0,
       course_code: "",
     });
     const [isEditing, setIsEditing] = useState(false);
@@ -105,7 +105,8 @@
     const renderItem = ({ item }: { item: DatabaseCRUD.TimeStamp }) => {
       return (
         <View style={styles.rowStyle}>
-          {/* Editable fields */}
+
+          {/* Course Code */}
           <View style={styles.itemStyle}>
             {(item.timestamp_id == editingRowId) && isEditing ? (
               <TextInput
@@ -119,6 +120,8 @@
               <Text>{item.course_code}</Text>
             )}
           </View>
+
+          {/* Date */}
           <View style={styles.itemStyle}>
             {(item.timestamp_id == editingRowId) && isEditing ? (
               <TextInput
@@ -132,20 +135,24 @@
               <Text>{item.day}</Text>
             )}
           </View>
+
+          {/* Slots */}
           <View style={styles.itemStyle}>
             {(item.timestamp_id == editingRowId) && isEditing ? (
               <TextInput
                 style={styles.textInputStyle}
-                value={editableRowData.period.toString()}
+                value={editableRowData.slots.toString()}
                 onChangeText={(text) =>
-                  setEditableRowData({...editableRowData, period: Number(text)})
+                  setEditableRowData({...editableRowData, slots: Number(text)})
                 }
                 keyboardType='numeric'
               />
             ) : (
-              <Text>{item.period}</Text>
+              <Text>{item.slots}</Text>
             )}
           </View>
+
+          {/* Present or Absent */}
           <View style={styles.itemStyle}>
             {(item.timestamp_id == editingRowId) && isEditing ? (
               <TextInput
@@ -157,7 +164,7 @@
                 keyboardType='numeric'
               />
             ) : (
-              <Text>{item.present}</Text>
+              <Text>{item.present===1?"Present":"Absent"}</Text>
             )}
           </View>
 
@@ -243,7 +250,7 @@
             <Text style={styles.headerStyle}>Date</Text>
           </View>
           <View style={styles.itemStyle}>
-            <Text style={styles.headerStyle}>Period</Text>
+            <Text style={styles.headerStyle}>Slot Count</Text>
           </View>
           <View style={styles.itemStyle}>
             <Text style={styles.headerStyle}>Status</Text>

@@ -6,6 +6,8 @@
 import * as SQLite from 'expo-sqlite';
 import { Course, TimeStamp, openDatabase } from './DatabaseCRUD';
 import { useState } from 'react';
+import { todayString } from 'react-native-calendars/src/expandableCalendar/commons';
+import { Slot } from 'expo-router';
 
 /* Interfaces for typescript */
           // await DatabaseCRUD.dropTable(db, 'time
@@ -15,8 +17,8 @@ interface getTimeStampByCourseCodeResult {
 }
 
 interface DaysResult {
-    "COUNT(timestamps.timestamp_id)": number,
-    "course_code": string
+    course_code: string,
+    slots: number,
 }
 
 interface Details {
@@ -32,12 +34,12 @@ const checkTableExistsQuery = "SELECT * FROM sqlite_master WHERE type='table' AN
 
 const getCourseQuery = `SELECT * FROM courses`;
 
-const getTotalDaysQuery = `SELECT course_code, COUNT(timestamps.timestamp_id) FROM timestamps WHERE course_code = ?`;
+const getTotalDaysQuery = `SELECT course_code, slots FROM timestamps WHERE course_code = ?`;
 
-const getPresentDaysQuery = `SELECT course_code, COUNT(timestamps.timestamp_id) FROM timestamps WHERE course_code = ? 
+const getPresentDaysQuery = `SELECT course_code, slots FROM timestamps WHERE course_code = ? 
 AND present = 1`;
 
-const getAbsentDaysQuery = `SELECT course_code, COUNT(timestamps.timestamp_id) FROM timestamps WHERE course_code = ? 
+const getAbsentDaysQuery = `SELECT course_code, slots FROM timestamps WHERE course_code = ? 
 AND present = 0`;
 
 const getTimeStampByCourseCodeQuery = `SELECT course_code, COUNT(timestamp_id) FROM timestamps 
@@ -80,57 +82,57 @@ const getCourse = async(db: SQLite.SQLiteDatabase): Promise<Course[]> => {
 
 
 // function to get total number of day for a particular course
-const getTotalDays = async(db: SQLite.SQLiteDatabase, course_code: string):Promise<DaysResult> => {
+const getTotalDays = async(db: SQLite.SQLiteDatabase, course_code: string):Promise<DaysResult[]> => {
 
     try {
-        const res:DaysResult|null = await db.getFirstAsync(getTotalDaysQuery, course_code);
+        const res:DaysResult[]|null = await db.getAllAsync(getTotalDaysQuery, course_code);
 
         if(res != null) 
             return res;
         else
-            return {"COUNT(timestamps.timestamp_id)": -1,
-                "course_code": '-1'}
+            return [{slots: -1,
+                course_code: '-1'}]
     } catch(err) {
         console.error("Error getting total days:", err);
-        const res:DaysResult = {"COUNT(timestamps.timestamp_id)": -1,
-                                "course_code": '-1'};
+        const res:DaysResult[] = [{slots: -1,
+                                course_code: '-1'}];
         return res;
     }
 }
 
 // function to get total number of present days for a particular course
-const getPresentDays = async(db: SQLite.SQLiteDatabase, course_code: string):Promise<DaysResult> => {
+const getPresentDays = async(db: SQLite.SQLiteDatabase, course_code: string):Promise<DaysResult[]> => {
 
     try {
-        const res:DaysResult|null = await db.getFirstAsync(getPresentDaysQuery, course_code);
+        const res:DaysResult[]|null = await db.getAllAsync(getPresentDaysQuery, course_code);
 
         if(res != null)
             return res;
         else 
-            return {"COUNT(timestamps.timestamp_id)": -1,
-                "course_code": '-1'};
+            return [{slots: -1,
+                "course_code": '-1'}];
     } catch(err) {
         console.error("Error getting present days:", err);
-        return {"COUNT(timestamps.timestamp_id)": -1,
-            "course_code": '-1'};
+        return [{slots: -1,
+            "course_code": '-1'}];
     }
 }
 
 // function to get total number of absent days for a particular course
-const getAbsentDays = async(db: SQLite.SQLiteDatabase, course_code: string):Promise<DaysResult> => {
+const getAbsentDays = async(db: SQLite.SQLiteDatabase, course_code: string):Promise<DaysResult[]> => {
 
     try {
-        const res:DaysResult|null = await db.getFirstAsync(getAbsentDaysQuery, course_code);
+        const res:DaysResult[]|null = await db.getAllAsync(getAbsentDaysQuery, course_code);
 
         if(res != null)
             return res;
         else
-            return {"COUNT(timestamps.timestamp_id)": -1,
-            "course_code": '-1'};
+            return [{slots: -1,
+            "course_code": '-1'}];
     } catch(err) {
         console.error("Error getting absent days:", err);
-        return {"COUNT(timestamps.timestamp_id)": -1,
-            "course_code": '-1'};
+        return [{slots: -1,
+            "course_code": '-1'}];
     }
 }
 
@@ -162,17 +164,18 @@ const getMainPageDetails = async(db: SQLite.SQLiteDatabase): Promise<Details[]|u
         // array to be returned
         const details: Details[] = await Promise.all(
             total.map(async ({ course_code }) => {
-              const totalDays: DaysResult = await getTotalDays(db, course_code);
-              const presentDays: DaysResult = await getPresentDays(db, course_code);
-              const absentDays: DaysResult = await getAbsentDays(db, course_code);
+              const totalDays: DaysResult[] = await getTotalDays(db, course_code);
+              const presentDays: DaysResult[] = await getPresentDays(db, course_code);
+              const absentDays: DaysResult[] = await getAbsentDays(db, course_code);
           
-              const totalClasses = totalDays['COUNT(timestamps.timestamp_id)'];
-              const presentClasses = presentDays['COUNT(timestamps.timestamp_id)'];
+              const totalClasses = totalDays.reduce((sum, {slots}) => sum + (slots), 0);
+              const presentClasses = presentDays.reduce((sum, {slots}) => sum = sum + (slots), 0);
+              const absentClasses = absentDays.reduce((sum, {slots}) => sum = sum + (slots), 0);
           
               return {
                 course_code,
                 total_classes: totalClasses,
-                absent_classes: absentDays['COUNT(timestamps.timestamp_id)'],
+                absent_classes: absentClasses,
                 present_classes: presentClasses,
                 attendance: totalClasses
                   ? Number(((presentClasses / totalClasses) * 100).toFixed(2))

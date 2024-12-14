@@ -9,9 +9,9 @@ interface Course {
 // interface for timestamps
 interface TimeStamp {
   timestamp_id: number,
-  period: number,
   day: string,
   present: number,
+  slots: number,
   course_code: string
 }
 
@@ -24,9 +24,9 @@ const createTablesQuery = `
       );
       CREATE TABLE IF NOT EXISTS timestamps (
         timestamp_id INTEGER PRIMARY KEY,
-        period INTEGER,
         day TEXT,
         present INTEGER,
+        slots INTEGER,
         course_code varchar(8),
         FOREIGN KEY(course_code) REFERENCES courses(course_code)
       );`;
@@ -39,6 +39,8 @@ const updateCourseCodeInTimestampsQuery = 'UPDATE timestamps SET course_code = ?
 
 const getAllCoursesQuery = 'SELECT * FROM courses';
 
+const insertTimestampDataQuery = 'INSERT OR IGNORE INTO timestamps (day, present, slots, course_code) VALUES (?, ?, ?, ?)';
+
 const getAllTimestampsQuery = 'SELECT * FROM timestamps where course_code = ?';
 
 const deleteCourseQuery = 'DELETE FROM courses WHERE course_code = ?';
@@ -49,7 +51,7 @@ const clearTableQuery = (tableName: string) => `DELETE FROM ${tableName}`;
 
 const dropTableQuery = (tableName: string) => `DROP TABLE IF EXISTS ${tableName}`;
 
-const modifyTimestampDataQuery = 'UPDATE timestamps SET period = ?, day = ?, present = ?, course_code = ? WHERE timestamp_id = ?';
+const modifyTimestampDataQuery = 'UPDATE timestamps SET day = ?, present = ?, slots = ?, course_code = ? WHERE timestamp_id = ?';
 
 const deleteTimestampDataQuery = 'DELETE FROM timestamps WHERE timestamp_id = ?';
 
@@ -62,6 +64,7 @@ const getSelectiveTimestampsQuery = 'SELECT * FROM timestamps WHERE course_code 
 export const openDatabase = async (): Promise<SQLite.SQLiteDatabase | undefined> => {
   try {
     const db = await SQLite.openDatabaseAsync('attendance.db');
+    await createTables(db);
     console.log("Database connected!");
     return db;
   } catch (error) {
@@ -95,7 +98,7 @@ export const insertCourseData = async (db: SQLite.SQLiteDatabase, course_code: s
 export const updateTimestampData = async (db : SQLite.SQLiteDatabase, data: TimeStamp) => {
   try {
     if(db) {
-      const res = await db.runAsync(modifyTimestampDataQuery, data.period, data.day, data.present, data.course_code, data.timestamp_id);
+      const res = await db.runAsync(modifyTimestampDataQuery, data.day, data.present, data.slots, data.course_code, data.timestamp_id);
       console.log("Updated timestamp data");
       // console.log("res", res);
     } 
@@ -144,13 +147,11 @@ export const deleteCourse = async (db: SQLite.SQLiteDatabase, course_code: strin
 } 
 
 // Function to insert data into timestamps table
-export const insertTimestampData = async (db: SQLite.SQLiteDatabase, period: number, day: string, present: number, course_code: string): Promise<void> => {
+export const insertTimestampData = async (db: SQLite.SQLiteDatabase, day: string, present: number, slots: number, course_code: string): Promise<void> => {
   try {
-    const res = await db.runAsync(
-      'INSERT OR IGNORE INTO timestamps (period, day, present, course_code) VALUES (?, ?, ?, ?)', 
-      period, day, present, course_code);
+    const res = await db.runAsync(insertTimestampDataQuery, day, present, slots, course_code);
 
-    // console.log(res);
+    console.log(res);
   } catch(err) {
     console.error("Failed to insert data:", err);
   }
@@ -204,6 +205,7 @@ export const clearTable = async (db: SQLite.SQLiteDatabase, tableName: string): 
 export const dropTable = async (db: SQLite.SQLiteDatabase, tableName: string): Promise<any[]> => {
   try {
     const res = await db.getAllAsync(dropTableQuery(tableName));
+    console.log("Dropping table", tableName);
     return res;
   } catch(err) {
     console.error("Failed to drop table:", err);
