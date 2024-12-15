@@ -12,7 +12,7 @@ function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={28} style={{ marginBottom: 0 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -24,27 +24,40 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: true,
+        tabBarPosition: 'top',
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          headerStyle: {
+            height: 50,
+            backgroundColor: 'white'
+          }
+        }}
+      />
+      <Tabs.Screen
+        name="markattendance"
+        options={{
+          title: 'Mark Attendance',
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          headerStyle: {
+            height: 50,
+            backgroundColor: 'white'
+          }
+        }}
+      />
+      <Tabs.Screen
+        name="timestamps"
+        options={{
+          title: 'Timestamps',
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          headerStyle: {
+            height: 50,
+            backgroundColor: 'white'
+          }
         }}
       />
       <Tabs.Screen
@@ -52,6 +65,10 @@ export default function TabLayout() {
         options={{
           title: 'Course Modification',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          headerStyle: {
+            height: 50,
+            backgroundColor: 'white'
+          }
         }}
       />
     </Tabs>
